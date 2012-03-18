@@ -1,6 +1,3 @@
-// GoogleMap
-var mapCanvas;
-
 function main() {
     // Geolocationに対応してるかチェック
     if (navigator.geolocation == undefined) {
@@ -16,7 +13,6 @@ function main() {
         var lat = pos.coords.latitude;
         var lon = pos.coords.longitude;
 
-        initializeMap(lat, lon);
         search(lat, lon);
     }
 
@@ -28,23 +24,10 @@ function main() {
         var DEFAULT_LATITUDE = 35.690921;
         var DEFAULT_LONGITUDE = 139.700258;
 
-        initializeMap(DEFAULT_LATITUDE, DEFAULT_LONGITUDE);
         search(DEFAULT_LATITUDE, DEFAULT_LONGITUDE);
     }
 
 
-}
-
-// GoogleMap初期化
-function initializeMap(lat ,lon) {
-    // 地図生成
-    var latlng = new google.maps.LatLng(lat, lon);
-    var myOptions = {
-        zoom: 15,
-        center: latlng,
-        mapTypeId: google.maps.MapTypeId.ROADMAP
-    };
-    mapCanvas = new google.maps.Map(document.getElementById("map"), myOptions);
 }
 
 // formのボタン押されたら実行
@@ -71,29 +54,54 @@ function callJSONP(url) {
 
 // コールバック関数
 function callbackFunc(response) {
-    var bounds = new google.maps.LatLngBounds();
-    var hitCount = 0; // geoの入っているツイート数
-
     var results = response.results;
+
+    var html = "<ul>";
     for (var i = 0; i < results.length; i++) {
         var result = results[i];
         if (result.geo != null) {
-            var pos = result.geo.coordinates;
-            var ll = new google.maps.LatLng(pos[0], pos[1]);
-            var marker = new google.maps.Marker({
-                position: ll,
-                map: mapCanvas,
-                draggable: false,
-                animation: google.maps.Animation.DROP,
-                icon: 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=T|46b6d8|46b6d8'
-            });
-            bounds.extend(ll);
-            hitCount++;
+            var convertedText = convertTweet(result.text);
+            var convertedTime = convertTweetTime(result.created_at);
+
+            html += "<li>"
+            html += "<div><img src=\"" + result.profile_image_url + "\" width=\"48px\" height=\"48px\" /></div>";
+            html += "<div>" + result.from_user + "</div>";
+            html += "<div>" + convertedText + "</div>";
+            html += "<div>" + convertedTime + "</div>";
+            html += "</li>";
         }
     }
+    html += "</ul>";
 
-    // マーカーが全部入るように地図の拡大率を調整
-    if (hitCount > 0) {
-        mapCanvas.fitBounds(bounds);
-    }
+    document.getElementById("timeline").innerHTML = html;
+ }
+
+// テキストにリンクを付ける
+function convertTweet(text) {
+    //URLにリンクを付ける
+    text = text.replace(/(s?https?:\/\/[-_.!~*'()a-zA-Z0-9;\/?:@&=+$,%#]+)/gi,'<a href="$1">$1</a>');
+    //ハッシュタグにリンク
+    text = text.replace(/#(\w+)/gi,'<a href="http://twitter.com/search?q=%23$1">#$1</a>');
+    //リプライにリンク
+    text = text.replace(/@(\w+)/gi,'<a href="http://twitter.com/$1">@$1</a>');
+    return text;
 }
+
+// 時間を見やすい形式に変換
+function convertTweetTime(time) {
+    var ms = Date.parse(time); // ミリ秒に変換
+    var d = new Date(ms);
+    var mon1 = d.getMonth() + 1;
+    var day1 = d.getDate();
+    var h1 = d.getHours();
+    var m1 = d.getMinutes();
+    var s1 = d.getSeconds();
+    return mon1 + "/" + day1 + " " + fix(h1) + ":" + fix(m1) + ":" + fix(s1);
+}
+
+// 2桁にする
+function fix(n) {
+    if (n < 10)
+        return "0" + n;
+    return n;
+};
