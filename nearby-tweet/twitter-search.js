@@ -18,7 +18,7 @@ function main() {
 
     // 失敗したとき
     function errorCallback(err) {
-        alert("失敗(" + err.code + ")" + err.message);
+        //alert("失敗(" + err.code + ")" + err.message);
 
         // 位置情報の初期値(新宿)
         var DEFAULT_LATITUDE = 35.690921;
@@ -26,8 +26,6 @@ function main() {
 
         search(DEFAULT_LATITUDE, DEFAULT_LONGITUDE);
     }
-
-
 }
 
 // formのボタン押されたら実行
@@ -56,18 +54,20 @@ function callJSONP(url) {
 function callbackFunc(response) {
     var results = response.results;
 
-    var html = "<ul>";
+    var html = "<ul class=\"content-list\">";
     for (var i = 0; i < results.length; i++) {
         var result = results[i];
         if (result.geo != null) {
             var convertedText = convertTweet(result.text);
             var convertedTime = convertTweetTime(result.created_at);
 
-            html += "<li>"
-            html += "<div><img src=\"" + result.profile_image_url + "\" width=\"48px\" height=\"48px\" /></div>";
-            html += "<div>" + result.from_user + "</div>";
-            html += "<div>" + convertedText + "</div>";
-            html += "<div>" + convertedTime + "</div>";
+            html += "<li class=\"content\">";
+            html += "<div class=\"content-left\"><img class=\"profile-image\" src=\"" + result.profile_image_url + "\" /></div>";
+            html += "<div class=\"content-right\">";
+            html += "<div class=\"from_user\">" + result.from_user + "</div>";
+            html += "<div class=\"text\">" + convertedText + "</div>";
+            html += "<div class=\"created_at\">" + convertedTime + "</div>";
+            html += "</div>";
             html += "</li>";
         }
     }
