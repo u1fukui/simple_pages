@@ -60,13 +60,23 @@ function callbackFunc(response) {
         if (result.geo != null) {
             var convertedText = convertTweet(result.text);
             var convertedTime = convertTweetTime(result.created_at);
+            var lat = result.geo.coordinates[0];
+            var lon = result.geo.coordinates[1];
 
             html += "<li class=\"content\">";
-            html += "<div class=\"content-left\"><img class=\"profile-image\" src=\"" + result.profile_image_url + "\" /></div>";
+            html += "<div class=\"content-left\">";
+            html +=     "<img class=\"profile-image\" src=\"" + result.profile_image_url + "\" />";
+            html += "</div>";
             html += "<div class=\"content-right\">";
-            html += "<div class=\"from_user\">" + result.from_user + "</div>";
-            html += "<div class=\"text\">" + convertedText + "</div>";
-            html += "<div class=\"created_at\">" + convertedTime + "</div>";
+            html +=     "<div class=\"content-right-header\">";
+            html +=         "<strong class=\"from_user_name\">" + result.from_user_name + "</strong>";
+            html +=         "  <span class=\"from_user\">@" + result.from_user + "</span>";
+            html +=     "</div>";
+            html +=     "<div class=\"text\">" + convertedText + "</div>";
+            html +=     "<div class=\"content-right-footer\">";
+            html +=         "<span class=\"created_at\">" + convertedTime + "</span>";
+            html +=         "  <a href=\"http://maps.google.co.jp/maps?q=" + lat + "," + lon + "\"><img class=\"map-icon\" src=\"Maps.png\"/></a>";
+            html +=     "</div>";
             html += "</div>";
             html += "</li>";
         }
@@ -95,8 +105,7 @@ function convertTweetTime(time) {
     var day1 = d.getDate();
     var h1 = d.getHours();
     var m1 = d.getMinutes();
-    var s1 = d.getSeconds();
-    return mon1 + "/" + day1 + " " + fix(h1) + ":" + fix(m1) + ":" + fix(s1);
+    return mon1 + "月" + day1 + "日 " + fix(h1) + "時" + fix(m1) + "分";
 }
 
 // 2桁にする
