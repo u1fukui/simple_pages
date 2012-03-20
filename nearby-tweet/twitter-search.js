@@ -13,6 +13,7 @@ function main() {
         var lat = pos.coords.latitude;
         var lon = pos.coords.longitude;
 
+        getAddress(lat, lon);
         search(lat, lon);
     }
 
@@ -26,6 +27,24 @@ function main() {
 
         search(DEFAULT_LATITUDE, DEFAULT_LONGITUDE);
     }
+}
+
+// 緯度・経度から住所を取得
+function getAddress(lat, lon) {
+    var geocoder = new google.maps.Geocoder();
+    var latlng = new google.maps.LatLng(lat, lon);
+    var address = "現在地";
+    geocoder.geocode({
+        latLng: latlng
+    }, function(results, status) {
+        console.log(status);
+        if (status == google.maps.GeocoderStatus.OK) {
+            if (results[0].geometry) {
+                address = results[0].formatted_address.replace(/^日本, /, '');
+            }
+        }
+        document.getElementById("title").innerHTML = address + "<br>付近のツイート";
+    });
 }
 
 // formのボタン押されたら実行
@@ -54,7 +73,7 @@ function callJSONP(url) {
 function callbackFunc(response) {
     var results = response.results;
 
-    var html = "<ul class=\"content-list\">";
+    var html = "";
     for (var i = 0; i < results.length; i++) {
         var result = results[i];
         if (result.geo != null) {
@@ -81,8 +100,6 @@ function callbackFunc(response) {
             html += "</li>";
         }
     }
-    html += "</ul>";
-
     document.getElementById("timeline").innerHTML = html;
  }
 
