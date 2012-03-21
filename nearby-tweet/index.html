@@ -86,12 +86,23 @@
             width: 25px;
             height: 25px;
         }
+        #footer {
+            height: 50px;
+            text-align: center;
+        }
+        #next-link {
+            line-height: 50px;
+            cursor: pointer;
+            color:#09c;
+            border-bottom:1px solid #09c;
+        }
     </style>
 </head>
 <body onload="main()">
 <div id="container">
     <h1 id="title"></h1>
     <ul id="timeline"></ul>
+    <div id="footer"><span id="next-link" onclick="search()">前のツイートを取得</span></div>
 <div>
 </body>
 </html>

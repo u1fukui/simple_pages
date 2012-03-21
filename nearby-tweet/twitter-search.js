@@ -1,3 +1,14 @@
+// 位置情報の初期値(新宿)
+var DEFAULT_ADDRESS = "新宿";
+var DEFAULT_LATITUDE = 35.690921;
+var DEFAULT_LONGITUDE = 139.700258;
+
+var address = DEFAULT_ADDRESS;
+var lat = DEFAULT_LATITUDE;
+var lon = DEFAULT_LONGITUDE;
+
+var maxId;
+
 function main() {
     // Geolocationに対応してるかチェック
     if (navigator.geolocation == undefined) {
@@ -10,45 +21,47 @@ function main() {
 
     // 成功したとき
     function successCallback(pos) {
-        var lat = pos.coords.latitude;
-        var lon = pos.coords.longitude;
+        lat = pos.coords.latitude;
+        lon = pos.coords.longitude;
 
-        getAddress(lat, lon);
-        search(lat, lon);
+        getAddress();
+        search();
     }
 
     // 失敗したとき
     function errorCallback(err) {
         //alert("失敗(" + err.code + ")" + err.message);
-
-        // 位置情報の初期値(新宿)
-        var DEFAULT_LATITUDE = 35.690921;
-        var DEFAULT_LONGITUDE = 139.700258;
-
-        search(DEFAULT_LATITUDE, DEFAULT_LONGITUDE);
+        printTitle();
+        search();
     }
 }
 
 // 緯度・経度から住所を取得
-function getAddress(lat, lon) {
+function getAddress() {
     var geocoder = new google.maps.Geocoder();
     var latlng = new google.maps.LatLng(lat, lon);
-    var address = "現在地";
     geocoder.geocode({
         latLng: latlng
     }, function(results, status) {
-        console.log(status);
         if (status == google.maps.GeocoderStatus.OK) {
             if (results[0].geometry) {
                 address = results[0].formatted_address.replace(/^日本, /, '');
+                printTitle();
+                return;
             }
         }
-        document.getElementById("title").innerHTML = address + "<br>付近のツイート";
+        address = "現在地";
+        printTitle();
     });
 }
 
+// タイトルをHTMLに出力
+function printTitle() {
+    document.getElementById("title").innerHTML = address + "<br>付近のツイート";
+}
+
 // formのボタン押されたら実行
-function search(lat, lon) {
+function search() {
     var TWEET_COUNT = 100;
     var CALLBACK_FUNCTION = "callbackFunc";
     var RADIUS = "1km";
@@ -57,6 +70,10 @@ function search(lat, lon) {
         "?rpp=" + TWEET_COUNT +
         "&callback=" + CALLBACK_FUNCTION +
         "&geocode=" + lat + "," + lon + "," + RADIUS;
+
+    if (maxId != null) {
+        apiUrl += "&max_id=" + maxId;
+    }
 
     callJSONP(apiUrl);
 }
@@ -72,8 +89,7 @@ function callJSONP(url) {
 // コールバック関数
 function callbackFunc(response) {
     var results = response.results;
-
-    var html = "";
+    var html = document.getElementById("timeline").innerHTML;
     for (var i = 0; i < results.length; i++) {
         var result = results[i];
         if (result.geo != null) {
@@ -99,6 +115,7 @@ function callbackFunc(response) {
             html += "</div>";
             html += "</li>";
         }
+        maxId = result.id_str;
     }
     document.getElementById("timeline").innerHTML = html;
  }
