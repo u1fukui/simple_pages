@@ -8,6 +8,7 @@ var lat = DEFAULT_LATITUDE;
 var lon = DEFAULT_LONGITUDE;
 
 var maxId;
+var nextPage;
 
 function main() {
     // Geolocationに対応してるかチェック
@@ -66,15 +67,16 @@ function search() {
     var CALLBACK_FUNCTION = "callbackFunc";
     var RADIUS = "1km";
 
-    var apiUrl = "http://search.twitter.com/search.json" +
-        "?rpp=" + TWEET_COUNT +
-        "&callback=" + CALLBACK_FUNCTION +
-        "&geocode=" + lat + "," + lon + "," + RADIUS;
+    var apiUrl = "http://search.twitter.com/search.json";
 
-    if (maxId != null) {
-        apiUrl += "&max_id=" + maxId;
+    if (nextPage != null) {
+        apiUrl += nextPage.toString();
+    } else {
+        apiUrl += "?rpp=" + TWEET_COUNT;
+        apiUrl += "&geocode=" + lat + "," + lon + "," + RADIUS;
     }
-
+    apiUrl += "&callback=" + CALLBACK_FUNCTION;
+    console.log(apiUrl);
     callJSONP(apiUrl);
 }
 
@@ -117,6 +119,8 @@ function callbackFunc(response) {
         }
         maxId = result.id_str;
     }
+    nextPage = response.next_page;
+    console.log(nextPage);
     document.getElementById("timeline").innerHTML = html;
  }
 
