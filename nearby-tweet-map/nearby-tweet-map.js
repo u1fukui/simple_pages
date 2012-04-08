@@ -1,3 +1,5 @@
+"use strict";
+
 // 位置情報の初期値(新宿)
 var DEFAULT_ADDRESS = "新宿";
 var DEFAULT_LATITUDE = 35.690921;
@@ -8,6 +10,7 @@ var lat = DEFAULT_LATITUDE;
 var lon = DEFAULT_LONGITUDE;
 
 var maxId;
+var nextPage;
 var mapCanvas;
 
 function main() {
@@ -24,17 +27,13 @@ function main() {
     function successCallback(pos) {
         lat = pos.coords.latitude;
         lon = pos.coords.longitude;
-
         initializeMap();
-        getAddress();
         search();
     }
 
     // 失敗したとき
     function errorCallback(err) {
-        //alert("失敗(" + err.code + ")" + err.message);
         initializeMap();
-        //printTitle();
         search();
     }
 }
@@ -49,44 +48,21 @@ function initializeMap() {
     mapCanvas = new google.maps.Map(document.getElementById("map-canvas"), myOptions);
 }
 
-// 緯度・経度から住所を取得
-function getAddress() {
-    var geocoder = new google.maps.Geocoder();
-    var latlng = new google.maps.LatLng(lat, lon);
-    geocoder.geocode({
-        latLng: latlng
-    }, function(results, status) {
-        if (status == google.maps.GeocoderStatus.OK) {
-            if (results[0].geometry) {
-                address = results[0].formatted_address.replace(/^日本, /, '');
-                printTitle();
-                return;
-            }
-        }
-        address = "現在地";
-        printTitle();
-    });
-}
-
-// タイトルをHTMLに出力
-function printTitle() {
-    document.getElementById("title").innerHTML = address + "<br>付近のツイート";
-}
-
 // formのボタン押されたら実行
 function search() {
     var TWEET_COUNT = 100;
     var CALLBACK_FUNCTION = "callbackFunc";
     var RADIUS = "1km";
 
-    var apiUrl = "http://search.twitter.com/search.json" +
-        "?rpp=" + TWEET_COUNT +
-        "&callback=" + CALLBACK_FUNCTION +
-        "&geocode=" + lat + "," + lon + "," + RADIUS;
+    var apiUrl = "http://search.twitter.com/search.json";
 
-    if (maxId != null) {
-        apiUrl += "&max_id=" + maxId;
+    if (nextPage != null) {
+        apiUrl += nextPage;
+    } else {
+        apiUrl += "?rpp=" + TWEET_COUNT;
+        apiUrl += "&geocode=" + lat + "," + lon + "," + RADIUS;
     }
+    apiUrl += "&callback=" + CALLBACK_FUNCTION;
 
     callJSONP(apiUrl);
 }
@@ -109,16 +85,68 @@ function callbackFunc(response) {
             var lon = result.geo.coordinates[1];
             var latlng = new google.maps.LatLng(lat, lon);
 
-            console.log(result.profile_image_url);
-
             var marker = new google.maps.Marker({
                 position: latlng,
                 map: mapCanvas,
                 draggable: false,
                 animation: google.maps.Animation.DROP,
-                icon: result.profile_image_url
+                icon: result.profile_image_url,
             });
+
+            google.maps.event.addListener(marker, 'click', function() {location.href = "http://twitter.com/#!/" + result.from_user});
+
+            new google.maps.InfoWindow({
+                content: convertText(result),
+                maxWidth: 200
+            }).open(marker.getMap(), marker);
         }
         maxId = result.id_str;
     }
- }
+    nextPage = response.next_page;
+}
+
+
+function convertText(result) {
+    var convertedText = convertTweet(result.text);
+    var convertedTime = convertTweetTime(result.created_at);
+
+    var html = "";
+    html += "<div class=\"content-right-header\">";
+    html +=     "<strong class=\"from_user_name\">" + result.from_user_name + "</strong>";
+    html +=     "  <span class=\"from_user\">@" + result.from_user + "</span>";
+    html += "</div>";
+    html += "<div class=\"text\">" + convertedText + "</div>";
+    html += "<div class=\"content-right-footer\">";
+    html +=     "<span class=\"created_at\">" + convertedTime + "</span>";
+    html += "</div>";
+    return html;
+}
+
+// テキストにリンクを付ける
+function convertTweet(text) {
+    //URLにリンクを付ける
+    text = text.replace(/(s?https?:\/\/[-_.!~*'()a-zA-Z0-9;\/?:@&=+$,%#]+)/gi,'<a href="$1">$1</a>');
+    //ハッシュタグにリンク
+    text = text.replace(/#(\w+)/gi,'<a href="http://twitter.com/search?q=%23$1">#$1</a>');
+    //リプライにリンク
+    text = text.replace(/@(\w+)/gi,'<a href="http://twitter.com/$1">@$1</a>');
+    return text;
+}
+
+// 時間を見やすい形式に変換
+function convertTweetTime(time) {
+    var ms = Date.parse(time); // ミリ秒に変換
+    var d = new Date(ms);
+    var mon1 = d.getMonth() + 1;
+    var day1 = d.getDate();
+    var h1 = d.getHours();
+    var m1 = d.getMinutes();
+    return mon1 + "月" + day1 + "日 " + fix(h1) + "時" + fix(m1) + "分";
+}
+
+// 2桁にする
+function fix(n) {
+    if (n < 10)
+        return "0" + n;
+    return n;
+};
